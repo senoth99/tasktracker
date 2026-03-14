@@ -3,150 +3,637 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Операционная доска — офлайн</title>
+    <title>ОПЕРАЦИОННАЯ ДОСКА</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <style>
-      :root { color-scheme: light; }
-      body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }
-      .wrap { max-width: 1080px; margin: 0 auto; padding: 20px; }
-      .grid { display: grid; gap: 12px; }
-      .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); }
-      .title { margin: 0 0 12px; font-size: 20px; }
-      .muted { color: #64748b; font-size: 13px; }
-      label { display: block; font-size: 13px; color: #334155; margin-bottom: 8px; }
-      input, select, textarea, button { font: inherit; }
-      input, select, textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 9px 10px; box-sizing: border-box; margin-top: 4px; }
-      textarea { min-height: 80px; resize: vertical; }
-      button { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; background: #f8fafc; cursor: pointer; }
-      button.primary { background: #0ea5e9; color: #fff; border-color: #0284c7; }
-      button.danger { color: #be123c; border-color: #fecdd3; background: #fff1f2; }
-      .row { display: flex; gap: 8px; align-items: center; }
-      .between { justify-content: space-between; }
-      .task { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; margin-top: 8px; }
-      .task h4 { margin: 0 0 6px; }
-      .pill { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #e2e8f0; color: #334155; }
-      .pill.crit { background: #ffe4e6; color: #be123c; }
-      .pill.high { background: #fef3c7; color: #92400e; }
-      .pill.done { background: #dcfce7; color: #166534; }
-      .empty { padding: 16px; text-align: center; color: #64748b; border: 1px dashed #cbd5e1; border-radius: 10px; }
-      @media (max-width: 860px) { .grid-2 { grid-template-columns: 1fr; } }
+      :root {
+        color-scheme: light;
+        --bg: #f5f7fb;
+        --card: rgba(255, 255, 255, 0.9);
+        --card-solid: #ffffff;
+        --line: #e7ebf3;
+        --text: #131722;
+        --muted: #70788b;
+        --primary: #2f6df6;
+        --primary-soft: #eef3ff;
+        --danger: #e3415d;
+        --shadow: 0 12px 30px rgba(18, 26, 45, 0.08);
+        --radius-lg: 18px;
+        --radius-md: 12px;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: radial-gradient(circle at 0 0, #f9fbff 0%, #f5f7fb 46%, #eef2f8 100%); color: var(--text); min-height: 100%; }
+      body { display: flex; }
+      button, input, select, textarea { font: inherit; color: inherit; }
+
+      .layout { display: grid; grid-template-columns: 248px 1fr; width: 100%; min-height: 100vh; }
+      .sidebar {
+        border-right: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(8px);
+        padding: 18px 14px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+      }
+
+      .brand { padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: #fff; box-shadow: var(--shadow); margin-bottom: 16px; }
+      .brand strong { display: block; font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; }
+      .brand span { color: var(--muted); font-size: 12px; }
+      .nav { display: grid; gap: 6px; }
+      .nav-btn {
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        text-align: left;
+        padding: 10px 12px;
+        color: #3a4358;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .nav-btn.active { background: var(--primary-soft); color: #1f56d9; }
+      .nav-btn:hover { background: #f1f4fb; }
+
+      .content { padding: 28px 30px 36px; }
+      .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 22px; }
+      .title h1 { margin: 0; font-size: 26px; letter-spacing: -0.02em; }
+      .title p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+      .actions { display: flex; gap: 10px; }
+      .btn {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 11px;
+        padding: 10px 14px;
+        cursor: pointer;
+        font-weight: 500;
+      }
+      .btn:hover { border-color: #cfd6e5; }
+      .btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 8px 20px rgba(47, 109, 246, 0.32); }
+      .btn.primary:hover { filter: brightness(0.97); }
+
+      .panel { display: none; }
+      .panel.active { display: block; }
+
+      .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+      .summary-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+        box-shadow: var(--shadow);
+      }
+      .summary-card small { color: var(--muted); display: block; margin-bottom: 8px; }
+      .summary-card strong { font-size: 30px; letter-spacing: -0.03em; }
+
+      .board-section { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow); }
+      .list-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+
+      .deadline-list { display: grid; gap: 10px; }
+      .deadline-item { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+      .deadline-item strong { font-size: 14px; }
+      .meta { color: var(--muted); font-size: 12px; }
+
+      .kanban-grid { display: grid; grid-template-columns: repeat(5, minmax(220px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+      .column { background: rgba(255,255,255,0.76); border: 1px solid var(--line); border-radius: 14px; min-height: 220px; display: grid; grid-template-rows: auto 1fr; }
+      .column-head { padding: 10px 12px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+      .column-head h3 { margin: 0; font-size: 13px; }
+      .count { background: #eef2fb; border-radius: 999px; font-size: 11px; padding: 2px 7px; color: #4f5c78; }
+      .column-body { padding: 10px; display: grid; gap: 8px; align-content: start; }
+
+      .task-card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px;
+        box-shadow: 0 6px 16px rgba(17, 28, 46, 0.06);
+        cursor: pointer;
+        transition: transform 0.16s ease, box-shadow 0.16s ease;
+      }
+      .task-card:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(17, 28, 46, 0.09); }
+      .task-card h4 { margin: 0 0 8px; font-size: 14px; }
+      .task-card.overdue { border-color: #ffd6df; background: #fff9fb; }
+      .badge-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 7px; }
+      .badge { font-size: 11px; border-radius: 999px; padding: 2px 8px; background: #eef1f8; color: #49556f; }
+      .badge.low { background: #edf8f0; color: #1c7c4e; }
+      .badge.medium { background: #eff4ff; color: #2b58c7; }
+      .badge.high { background: #fff5e8; color: #b26c1f; }
+      .badge.critical { background: #ffe8ee; color: #b43258; }
+      .badge.urgent { background: #fde8ed; color: #be254f; }
+
+      .task-meta { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+      .ghost { border: 1px dashed #a8b6d2 !important; background: #f4f7ff !important; }
+
+      .toolbar-line { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 10px; display: grid; grid-template-columns: 2fr repeat(3, 1fr) auto; gap: 8px; margin-bottom: 12px; }
+      .field, .select {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 9px 10px;
+        background: #fff;
+      }
+
+      .list-view { display: grid; gap: 8px; }
+      .list-item {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        padding: 11px 14px;
+        display: grid;
+        grid-template-columns: 2.2fr repeat(5, 1fr) 0.8fr;
+        gap: 10px;
+        align-items: center;
+      }
+      .list-item.header { color: #6d778e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; background: transparent; border-style: dashed; }
+      .list-item.overdue { border-color: #ffd6df; background: #fff8fb; }
+
+      .settings-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 16px; }
+      .entity-row { display: grid; grid-template-columns: 24px 1.5fr 1fr auto auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f3f8; }
+      .entity-row:last-child { border-bottom: 0; }
+      .dot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid #d1d8e8; }
+      .avatar { width: 30px; height: 30px; border-radius: 50%; background: #eef3ff; color: #3757c2; font-size: 11px; display: grid; place-items: center; font-weight: 700; }
+      .hint { color: var(--muted); font-size: 12px; }
+
+      .modal-backdrop { position: fixed; inset: 0; background: rgba(20, 26, 40, 0.35); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 20; }
+      .modal-backdrop.active { display: flex; }
+      .modal {
+        width: min(840px, 100%);
+        max-height: calc(100vh - 40px);
+        overflow: auto;
+        background: #fff;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        box-shadow: 0 20px 50px rgba(13, 24, 45, 0.28);
+        padding: 18px;
+      }
+      .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+      .modal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .modal-grid .full { grid-column: 1 / -1; }
+      .control { display: grid; gap: 4px; font-size: 13px; color: #556078; }
+      .control input, .control select, .control textarea { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: #fff; }
+      .control textarea { min-height: 96px; resize: vertical; }
+      .modal-actions { margin-top: 14px; display: flex; justify-content: space-between; gap: 8px; }
+      .switch { display: flex; gap: 8px; align-items: center; }
+
+      .empty { border: 1px dashed #ccd5e6; border-radius: 12px; text-align: center; color: var(--muted); padding: 22px 10px; background: #fff; }
+
+      @media (max-width: 1100px) {
+        .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .toolbar-line { grid-template-columns: 1fr; }
+        .list-item { grid-template-columns: 1fr; gap: 6px; }
+        .list-item.header { display: none; }
+      }
+      @media (max-width: 850px) {
+        .layout { grid-template-columns: 1fr; }
+        .sidebar { position: static; height: auto; border-bottom: 1px solid var(--line); }
+        .nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      }
     </style>
   </head>
   <body>
-    <div class="wrap grid">
-      <section class="card">
-        <h1 class="title">ОПЕРАЦИОННАЯ ДОСКА (локальный режим)</h1>
-        <p class="muted">Откройте этот <b>index.html</b> двойным кликом — всё работает без сервера. Данные сохраняются автоматически в localStorage и восстанавливаются при следующем открытии.</p>
-      </section>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <strong>ОПЕРАЦИОННАЯ ДОСКА</strong>
+          <span>Личный тасктрекер руководителя</span>
+        </div>
+        <nav class="nav" id="nav"></nav>
+      </aside>
 
-      <section class="card">
-        <h2 class="title" style="font-size:18px">Новая / редактирование задачи</h2>
-        <form id="taskForm" class="grid">
-          <input type="hidden" id="taskId" />
-          <div class="grid grid-2">
-            <label>Название<input id="title" required placeholder="Например: Подготовить отчёт" /></label>
-            <label>Исполнитель<input id="assignee" placeholder="Иван Петров" /></label>
-            <label>Отдел<input id="department" placeholder="Маркетинг" /></label>
-            <label>Статус
-              <select id="status">
-                <option>Беклог</option>
-                <option>В процессе</option>
-                <option>На проверке</option>
-                <option>Готово</option>
-              </select>
-            </label>
-            <label>Приоритет
-              <select id="priority">
-                <option>Низкий</option>
-                <option selected>Средний</option>
-                <option>Высокий</option>
-                <option>Критический</option>
-              </select>
-            </label>
-            <label>Дедлайн<input id="deadline" type="date" /></label>
+      <main class="content">
+        <header class="toolbar">
+          <div class="title">
+            <h1 id="viewTitle">Дашборд</h1>
+            <p id="viewSubtitle">Ключевая картина по текущей нагрузке и дедлайнам</p>
           </div>
-          <label>Описание<textarea id="description" placeholder="Детали задачи"></textarea></label>
-          <div class="row between">
-            <div class="row">
-              <button type="button" id="resetBtn">Очистить форму</button>
-              <button type="button" id="wipeBtn" class="danger">Сбросить все данные</button>
+          <div class="actions">
+            <button class="btn" id="wipeDataBtn">Сбросить данные</button>
+            <button class="btn primary" id="newTaskBtn">+ Новая задача</button>
+          </div>
+        </header>
+
+        <section id="dashboard" class="panel"></section>
+        <section id="kanban" class="panel"></section>
+        <section id="list" class="panel"></section>
+        <section id="departments" class="panel"></section>
+        <section id="assignees" class="panel"></section>
+        <section id="statuses" class="panel"></section>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="taskModalBackdrop">
+      <div class="modal">
+        <div class="modal-head">
+          <strong id="modalTitle">Новая задача</strong>
+          <button class="btn" id="closeModalBtn">Закрыть</button>
+        </div>
+        <form id="taskForm">
+          <input type="hidden" id="taskId" />
+          <div class="modal-grid">
+            <label class="control full">Название
+              <input id="taskTitle" required placeholder="Кратко и по делу" />
+            </label>
+            <label class="control full">Описание
+              <textarea id="taskDescription" placeholder="Контекст, критерии приемки, ссылка на материалы"></textarea>
+            </label>
+            <label class="control">Отдел<select id="taskDepartment"></select></label>
+            <label class="control">Исполнитель<select id="taskAssignee"></select></label>
+            <label class="control">Статус<select id="taskStatus"></select></label>
+            <label class="control">Приоритет<select id="taskPriority"></select></label>
+            <label class="control">Дата начала<input id="taskStartDate" type="date" /></label>
+            <label class="control">Дедлайн<input id="taskDeadline" type="date" /></label>
+            <label class="control switch full"><input id="taskUrgent" type="checkbox" /> Срочно</label>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn" id="deleteTaskBtn" style="display:none">Удалить</button>
+            <div style="display:flex; gap:8px">
+              <button type="button" class="btn" id="resetFormBtn">Очистить</button>
+              <button type="submit" class="btn primary">Сохранить</button>
             </div>
-            <button class="primary" type="submit">Сохранить задачу</button>
           </div>
         </form>
-      </section>
-
-      <section class="card">
-        <div class="row between">
-          <h2 class="title" style="font-size:18px;margin:0">Задачи</h2>
-          <input id="search" placeholder="Поиск по названию..." style="max-width:320px" />
-        </div>
-        <div id="list"></div>
-      </section>
+      </div>
     </div>
 
     <script>
-      const STORAGE_KEY = 'oper-board-data-v1';
-      const nowDate = () => new Date().toISOString().slice(0, 10);
+      const STORAGE_KEY = 'operating-board-premium-v1';
+      const VIEWS = [
+        { id: 'dashboard', label: 'Дашборд', subtitle: 'Ключевая картина по текущей нагрузке и дедлайнам' },
+        { id: 'kanban', label: 'Канбан', subtitle: 'Основной режим исполнения задач с drag & drop' },
+        { id: 'list', label: 'Список', subtitle: 'Поиск, фильтры и сортировка в премиальном list view' },
+        { id: 'departments', label: 'Отделы', subtitle: 'Управление структурой подразделений и порядком' },
+        { id: 'assignees', label: 'Исполнители', subtitle: 'Сотрудники, ответственные за задачи' },
+        { id: 'statuses', label: 'Статусы', subtitle: 'Этапы движения задач по процессу' },
+      ];
 
-      const defaultState = () => ({ tasks: [] });
+      const STATUS_TEMPLATE = [
+        { id: 'backlog', name: 'Беклог', order: 0, hidden: false },
+        { id: 'assigned', name: 'Задача поставлена', order: 1, hidden: false },
+        { id: 'in_progress', name: 'В процессе', order: 2, hidden: false },
+        { id: 'review', name: 'На проверке', order: 3, hidden: false },
+        { id: 'done', name: 'Готово', order: 4, hidden: false },
+      ];
 
-      const loadState = () => {
-        const raw = localStorage.getItem(STORAGE_KEY);
+      const PRIORITIES = ['Низкий', 'Средний', 'Высокий', 'Критический'];
+      const PRIORITY_CLASS = { Низкий: 'low', Средний: 'medium', Высокий: 'high', Критический: 'critical' };
+
+      const defaultState = () => ({
+        activeView: 'dashboard',
+        filters: { query: '', status: 'all', priority: 'all', assignee: 'all', sort: 'deadline' },
+        departments: [
+          { id: crypto.randomUUID(), name: 'Продажи', color: '#7f8cff', order: 0, hidden: false },
+          { id: crypto.randomUUID(), name: 'Маркетинг', color: '#55c39d', order: 1, hidden: false },
+          { id: crypto.randomUUID(), name: 'Операции', color: '#f2b15f', order: 2, hidden: false },
+        ],
+        assignees: [
+          { id: crypto.randomUUID(), name: 'Иван Петров', hidden: false },
+          { id: crypto.randomUUID(), name: 'Анна Смирнова', hidden: false },
+          { id: crypto.randomUUID(), name: 'Олег Сидоров', hidden: false },
+        ],
+        statuses: structuredClone(STATUS_TEMPLATE),
+        tasks: [],
+      });
+
+      const parseState = (raw) => {
         if (!raw) return defaultState();
-        try { return JSON.parse(raw); } catch { return defaultState(); }
+        const parsed = JSON.parse(raw);
+        return {
+          ...defaultState(),
+          ...parsed,
+          statuses: parsed.statuses?.length ? parsed.statuses : structuredClone(STATUS_TEMPLATE),
+          filters: { ...defaultState().filters, ...(parsed.filters || {}) },
+        };
+      };
+
+      const state = (() => {
+        try {
+          return parseState(localStorage.getItem(STORAGE_KEY));
+        } catch {
+          return defaultState();
+        }
+      })();
+
+      const refs = {
+        nav: document.getElementById('nav'),
+        viewTitle: document.getElementById('viewTitle'),
+        viewSubtitle: document.getElementById('viewSubtitle'),
+        panels: Object.fromEntries(VIEWS.map(v => [v.id, document.getElementById(v.id)])),
+        taskModalBackdrop: document.getElementById('taskModalBackdrop'),
+        modalTitle: document.getElementById('modalTitle'),
+        taskForm: document.getElementById('taskForm'),
+        deleteTaskBtn: document.getElementById('deleteTaskBtn'),
       };
 
       const saveState = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      const nowDate = () => new Date().toISOString().slice(0, 10);
+      const toRuDate = (isoDate) => {
+        if (!isoDate) return '—';
+        const [y, m, d] = isoDate.split('-');
+        return `${d}.${m}.${y}`;
+      };
+      const initials = (name) => name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0]?.toUpperCase() || '').join('') || '—';
+      const isOverdue = (task) => task.deadline && task.deadline < nowDate() && task.statusId !== 'done';
+      const statusById = (id) => state.statuses.find(s => s.id === id);
+      const deptById = (id) => state.departments.find(d => d.id === id);
+      const assigneeById = (id) => state.assignees.find(a => a.id === id);
+      const activeStatuses = () => [...state.statuses].filter(s => !s.hidden).sort((a, b) => a.order - b.order);
 
-      const state = loadState();
-      const form = document.getElementById('taskForm');
-      const list = document.getElementById('list');
-      const search = document.getElementById('search');
+      function renderNav() {
+        refs.nav.innerHTML = VIEWS.map(view => `<button class="nav-btn ${state.activeView === view.id ? 'active' : ''}" data-view="${view.id}">${view.label}</button>`).join('');
+      }
 
-      if (!state.tasks.length) saveState();
+      function renderTitle() {
+        const current = VIEWS.find(v => v.id === state.activeView);
+        refs.viewTitle.textContent = current.label;
+        refs.viewSubtitle.textContent = current.subtitle;
+      }
 
-      function priorityClass(priority) {
-        if (priority === 'Критический') return 'pill crit';
-        if (priority === 'Высокий') return 'pill high';
-        return 'pill';
+      function renderDashboard() {
+        const tasks = state.tasks;
+        const active = tasks.filter(t => t.statusId !== 'done').length;
+        const overdue = tasks.filter(isOverdue).length;
+        const critical = tasks.filter(t => t.priority === 'Критический' || t.urgent).length;
+        const review = tasks.filter(t => t.statusId === 'review').length;
+        const nearest = [...tasks]
+          .filter(t => t.deadline && t.statusId !== 'done')
+          .sort((a, b) => a.deadline.localeCompare(b.deadline))
+          .slice(0, 6);
+
+        refs.panels.dashboard.innerHTML = `
+          <div class="summary-grid">
+            <article class="summary-card"><small>Активные задачи</small><strong>${active}</strong></article>
+            <article class="summary-card"><small>Просроченные</small><strong style="color:${overdue ? 'var(--danger)' : 'var(--text)'}">${overdue}</strong></article>
+            <article class="summary-card"><small>Критические / срочные</small><strong>${critical}</strong></article>
+            <article class="summary-card"><small>На проверке</small><strong>${review}</strong></article>
+          </div>
+          <article class="board-section">
+            <div class="list-head"><strong>Ближайшие дедлайны</strong><span class="hint">сортировка по дате</span></div>
+            <div class="deadline-list">
+              ${nearest.length ? nearest.map(task => `
+                <button class="deadline-item" data-open-task="${task.id}">
+                  <div>
+                    <strong>${escapeHtml(task.title)}</strong>
+                    <div class="meta">${escapeHtml(deptById(task.departmentId)?.name || 'Без отдела')} · ${escapeHtml(assigneeById(task.assigneeId)?.name || 'Без исполнителя')}</div>
+                  </div>
+                  <div class="badge ${PRIORITY_CLASS[task.priority] || ''}">${task.urgent ? 'Срочно · ' : ''}${toRuDate(task.deadline)}</div>
+                </button>
+              `).join('') : '<div class="empty">Нет задач с дедлайнами</div>'}
+            </div>
+          </article>
+        `;
+      }
+
+      function renderKanban() {
+        const columns = activeStatuses();
+        refs.panels.kanban.innerHTML = `<div class="kanban-grid">${columns.map(col => {
+          const items = state.tasks.filter(t => t.statusId === col.id);
+          return `
+          <article class="column" data-status="${col.id}">
+            <div class="column-head"><h3>${col.name}</h3><span class="count">${items.length}</span></div>
+            <div class="column-body" data-dropzone="${col.id}">
+              ${items.map(task => taskCard(task)).join('') || '<div class="empty">Пусто</div>'}
+            </div>
+          </article>`;
+        }).join('')}</div>`;
+
+        refs.panels.kanban.querySelectorAll('[data-dropzone]').forEach((zone) => {
+          Sortable.create(zone, {
+            group: 'tasks',
+            animation: 180,
+            ghostClass: 'ghost',
+            onAdd: (event) => {
+              const taskId = event.item.dataset.taskId;
+              const task = state.tasks.find(t => t.id === taskId);
+              if (!task) return;
+              task.statusId = event.to.dataset.dropzone;
+              task.updatedAt = new Date().toISOString();
+              saveState();
+              render();
+            }
+          });
+        });
+      }
+
+      function taskCard(task) {
+        const dept = deptById(task.departmentId);
+        const assignee = assigneeById(task.assigneeId);
+        return `
+          <article class="task-card ${isOverdue(task) ? 'overdue' : ''}" data-task-id="${task.id}" data-open-task="${task.id}">
+            <h4>${escapeHtml(task.title)}</h4>
+            <div class="badge-row">
+              <span class="badge ${PRIORITY_CLASS[task.priority] || ''}">${task.priority}</span>
+              ${task.urgent ? '<span class="badge urgent">Срочно</span>' : ''}
+            </div>
+            <div class="task-meta">
+              <span>${escapeHtml(assignee?.name || 'Без исполнителя')}</span>
+              <span>${escapeHtml(dept?.name || 'Без отдела')}</span>
+              <span>Дедлайн: ${toRuDate(task.deadline)}</span>
+            </div>
+          </article>`;
+      }
+
+      function filteredTasks() {
+        let items = [...state.tasks];
+        const f = state.filters;
+        if (f.query) {
+          const query = f.query.toLowerCase();
+          items = items.filter(t => [t.title, t.description].join(' ').toLowerCase().includes(query));
+        }
+        if (f.status !== 'all') items = items.filter(t => t.statusId === f.status);
+        if (f.priority !== 'all') items = items.filter(t => t.priority === f.priority);
+        if (f.assignee !== 'all') items = items.filter(t => t.assigneeId === f.assignee);
+
+        items.sort((a, b) => {
+          if (f.sort === 'deadline') return (a.deadline || '9999-99-99').localeCompare(b.deadline || '9999-99-99');
+          if (f.sort === 'priority') return PRIORITIES.indexOf(b.priority) - PRIORITIES.indexOf(a.priority);
+          return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+        });
+        return items;
+      }
+
+      function renderList() {
+        const f = state.filters;
+        refs.panels.list.innerHTML = `
+          <div class="toolbar-line">
+            <input class="field" id="fltQuery" placeholder="Поиск по названию и описанию" value="${escapeHtml(f.query)}" />
+            <select class="select" id="fltStatus"><option value="all">Все статусы</option>${activeStatuses().map(s => `<option value="${s.id}" ${f.status === s.id ? 'selected' : ''}>${s.name}</option>`)}</select>
+            <select class="select" id="fltPriority"><option value="all">Все приоритеты</option>${PRIORITIES.map(p => `<option value="${p}" ${f.priority === p ? 'selected' : ''}>${p}</option>`)}</select>
+            <select class="select" id="fltAssignee"><option value="all">Все исполнители</option>${state.assignees.filter(a => !a.hidden).map(a => `<option value="${a.id}" ${f.assignee === a.id ? 'selected' : ''}>${escapeHtml(a.name)}</option>`)}</select>
+            <select class="select" id="fltSort">
+              <option value="deadline" ${f.sort === 'deadline' ? 'selected' : ''}>По дедлайну</option>
+              <option value="priority" ${f.sort === 'priority' ? 'selected' : ''}>По приоритету</option>
+              <option value="updated" ${f.sort === 'updated' ? 'selected' : ''}>По обновлению</option>
+            </select>
+          </div>
+          <div class="list-view" id="tasksListWrap"></div>
+        `;
+
+        const listWrap = refs.panels.list.querySelector('#tasksListWrap');
+        const items = filteredTasks();
+        listWrap.innerHTML = `
+          <article class="list-item header"><span>Название</span><span>Отдел</span><span>Исполнитель</span><span>Приоритет</span><span>Статус</span><span>Дедлайн</span><span>Срочно</span></article>
+          ${items.length ? items.map(task => `
+            <button class="list-item ${isOverdue(task) ? 'overdue' : ''}" data-open-task="${task.id}">
+              <strong>${escapeHtml(task.title)}</strong>
+              <span>${escapeHtml(deptById(task.departmentId)?.name || '—')}</span>
+              <span>${escapeHtml(assigneeById(task.assigneeId)?.name || '—')}</span>
+              <span><span class="badge ${PRIORITY_CLASS[task.priority] || ''}">${task.priority}</span></span>
+              <span>${escapeHtml(statusById(task.statusId)?.name || '—')}</span>
+              <span>${toRuDate(task.deadline)}</span>
+              <span>${task.urgent ? 'Да' : '—'}</span>
+            </button>
+          `).join('') : '<div class="empty">По текущим фильтрам задач не найдено</div>'}
+        `;
+      }
+
+      function renderDepartments() {
+        refs.panels.departments.innerHTML = `
+          <article class="settings-card">
+            <div class="list-head"><strong>Отделы</strong><button class="btn" id="addDepartmentBtn">+ Добавить отдел</button></div>
+            <div class="hint" style="margin-bottom:10px">Каждый отдел хранит название, цвет, порядок и флаг скрытия.</div>
+            <div id="departmentRows"></div>
+          </article>
+        `;
+
+        const rows = refs.panels.departments.querySelector('#departmentRows');
+        const sorted = [...state.departments].sort((a, b) => a.order - b.order);
+        rows.innerHTML = sorted.map(dep => `
+          <div class="entity-row" data-dep-id="${dep.id}">
+            <span class="dot" style="background:${dep.color}"></span>
+            <input class="field" value="${escapeHtml(dep.name)}" data-field="name" />
+            <input class="field" type="color" value="${dep.color}" data-field="color" />
+            <button class="btn" data-action="toggle">${dep.hidden ? 'Показать' : 'Скрыть'}</button>
+            <button class="btn" data-action="up">↑</button>
+          </div>
+        `).join('') || '<div class="empty">Отделы пока не добавлены</div>';
+      }
+
+      function renderAssignees() {
+        refs.panels.assignees.innerHTML = `
+          <article class="settings-card">
+            <div class="list-head"><strong>Исполнители</strong><button class="btn" id="addAssigneeBtn">+ Добавить исполнителя</button></div>
+            <div id="assigneeRows"></div>
+          </article>
+        `;
+        const rows = refs.panels.assignees.querySelector('#assigneeRows');
+        rows.innerHTML = state.assignees.map(person => `
+          <div class="entity-row" data-assignee-id="${person.id}" style="grid-template-columns: 40px 1fr auto auto;">
+            <span class="avatar">${initials(person.name)}</span>
+            <input class="field" value="${escapeHtml(person.name)}" data-field="name" />
+            <button class="btn" data-action="toggle">${person.hidden ? 'Показать' : 'Скрыть'}</button>
+            <button class="btn" data-action="remove">Удалить</button>
+          </div>
+        `).join('') || '<div class="empty">Исполнители пока не добавлены</div>';
+      }
+
+      function renderStatuses() {
+        refs.panels.statuses.innerHTML = `
+          <article class="settings-card">
+            <div class="list-head"><strong>Статусы</strong><span class="hint">Можно менять название, порядок и видимость</span></div>
+            <div id="statusRows">
+              ${[...state.statuses].sort((a,b)=>a.order-b.order).map(st => `
+                <div class="entity-row" data-status-id="${st.id}" style="grid-template-columns: 1.7fr auto auto auto;">
+                  <input class="field" value="${escapeHtml(st.name)}" data-field="name" />
+                  <button class="btn" data-action="toggle">${st.hidden ? 'Показать' : 'Скрыть'}</button>
+                  <button class="btn" data-action="up">↑</button>
+                  <button class="btn" data-action="down">↓</button>
+                </div>
+              `).join('')}
+            </div>
+          </article>
+        `;
+      }
+
+      function renderFormOptions() {
+        const departmentSelect = document.getElementById('taskDepartment');
+        const assigneeSelect = document.getElementById('taskAssignee');
+        const statusSelect = document.getElementById('taskStatus');
+        const prioritySelect = document.getElementById('taskPriority');
+
+        departmentSelect.innerHTML = '<option value="">Не выбран</option>' + state.departments.filter(d => !d.hidden).sort((a,b)=>a.order-b.order).map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+        assigneeSelect.innerHTML = '<option value="">Не назначен</option>' + state.assignees.filter(a => !a.hidden).map(a => `<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('');
+        statusSelect.innerHTML = state.statuses.filter(s => !s.hidden).sort((a,b)=>a.order-b.order).map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+        prioritySelect.innerHTML = PRIORITIES.map(p => `<option value="${p}">${p}</option>`).join('');
       }
 
       function render() {
-        const q = search.value.trim().toLowerCase();
-        const tasks = [...state.tasks]
-          .filter(t => !q || t.title.toLowerCase().includes(q))
-          .sort((a, b) => (a.deadline || '9999-12-31').localeCompare(b.deadline || '9999-12-31'));
+        renderNav();
+        renderTitle();
+        renderFormOptions();
+        Object.entries(refs.panels).forEach(([id, panel]) => panel.classList.toggle('active', id === state.activeView));
+        renderDashboard();
+        renderKanban();
+        renderList();
+        renderDepartments();
+        renderAssignees();
+        renderStatuses();
+      }
 
-        if (!tasks.length) {
-          list.innerHTML = '<div class="empty">Пока задач нет</div>';
-          return;
+      function openTaskModal(taskId = null) {
+        const isEditing = Boolean(taskId);
+        refs.modalTitle.textContent = isEditing ? 'Карточка задачи' : 'Новая задача';
+        refs.deleteTaskBtn.style.display = isEditing ? 'inline-block' : 'none';
+        const form = refs.taskForm;
+        form.reset();
+        document.getElementById('taskId').value = '';
+        document.getElementById('taskStartDate').value = nowDate();
+
+        if (isEditing) {
+          const task = state.tasks.find(t => t.id === taskId);
+          if (!task) return;
+          document.getElementById('taskId').value = task.id;
+          document.getElementById('taskTitle').value = task.title;
+          document.getElementById('taskDescription').value = task.description || '';
+          document.getElementById('taskDepartment').value = task.departmentId || '';
+          document.getElementById('taskAssignee').value = task.assigneeId || '';
+          document.getElementById('taskStatus').value = task.statusId;
+          document.getElementById('taskPriority').value = task.priority;
+          document.getElementById('taskStartDate').value = task.startDate || nowDate();
+          document.getElementById('taskDeadline').value = task.deadline || '';
+          document.getElementById('taskUrgent').checked = Boolean(task.urgent);
+          refs.deleteTaskBtn.dataset.taskId = task.id;
         }
 
-        list.innerHTML = tasks.map(task => {
-          const doneClass = task.status === 'Готово' ? 'pill done' : 'pill';
-          return `
-            <article class="task">
-              <div class="row between">
-                <h4>${escapeHtml(task.title)}</h4>
-                <div class="row">
-                  <span class="${priorityClass(task.priority)}">${task.priority}</span>
-                  <span class="${doneClass}">${task.status}</span>
-                </div>
-              </div>
-              <div class="muted">${escapeHtml(task.department || 'Без отдела')} • ${escapeHtml(task.assignee || 'Без исполнителя')} • дедлайн: ${task.deadline || 'не указан'}</div>
-              <p style="margin:8px 0 0">${escapeHtml(task.description || '')}</p>
-              <div class="row" style="margin-top:8px">
-                <button data-action="edit" data-id="${task.id}">Редактировать</button>
-                <button data-action="delete" data-id="${task.id}" class="danger">Удалить</button>
-              </div>
-            </article>
-          `;
-        }).join('');
+        refs.taskModalBackdrop.classList.add('active');
+      }
+
+      function closeTaskModal() {
+        refs.taskModalBackdrop.classList.remove('active');
+      }
+
+      function saveTaskFromForm(event) {
+        event.preventDefault();
+        const id = document.getElementById('taskId').value || crypto.randomUUID();
+        const payload = {
+          id,
+          title: document.getElementById('taskTitle').value.trim(),
+          description: document.getElementById('taskDescription').value.trim(),
+          departmentId: document.getElementById('taskDepartment').value || null,
+          assigneeId: document.getElementById('taskAssignee').value || null,
+          statusId: document.getElementById('taskStatus').value,
+          priority: document.getElementById('taskPriority').value,
+          startDate: document.getElementById('taskStartDate').value || nowDate(),
+          deadline: document.getElementById('taskDeadline').value || '',
+          urgent: document.getElementById('taskUrgent').checked,
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        };
+
+        if (!payload.title) return;
+        const index = state.tasks.findIndex(t => t.id === id);
+        if (index >= 0) payload.createdAt = state.tasks[index].createdAt;
+        if (index >= 0) state.tasks[index] = payload;
+        else state.tasks.push(payload);
+
+        saveState();
+        closeTaskModal();
+        render();
       }
 
       function escapeHtml(value) {
-        return String(value)
+        return String(value ?? '')
           .replaceAll('&', '&amp;')
           .replaceAll('<', '&lt;')
           .replaceAll('>', '&gt;')
@@ -154,73 +641,134 @@
           .replaceAll("'", '&#39;');
       }
 
-      function resetForm() {
-        form.reset();
-        document.getElementById('taskId').value = '';
-        document.getElementById('deadline').value = nowDate();
+      function reorderEntity(entity, id, direction) {
+        const items = [...state[entity]].sort((a,b) => a.order - b.order);
+        const idx = items.findIndex(i => i.id === id);
+        const target = direction === 'up' ? idx - 1 : idx + 1;
+        if (idx < 0 || target < 0 || target >= items.length) return;
+        [items[idx], items[target]] = [items[target], items[idx]];
+        items.forEach((item, order) => item.order = order);
+        state[entity] = items;
       }
 
-      form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const payload = {
-          id: document.getElementById('taskId').value || crypto.randomUUID(),
-          title: document.getElementById('title').value.trim(),
-          assignee: document.getElementById('assignee').value.trim(),
-          department: document.getElementById('department').value.trim(),
-          status: document.getElementById('status').value,
-          priority: document.getElementById('priority').value,
-          deadline: document.getElementById('deadline').value,
-          description: document.getElementById('description').value.trim(),
-          updatedAt: new Date().toISOString()
-        };
+      document.getElementById('newTaskBtn').addEventListener('click', () => openTaskModal());
+      document.getElementById('closeModalBtn').addEventListener('click', closeTaskModal);
+      document.getElementById('resetFormBtn').addEventListener('click', () => refs.taskForm.reset());
+      refs.taskForm.addEventListener('submit', saveTaskFromForm);
 
-        if (!payload.title) return;
-        const index = state.tasks.findIndex(task => task.id === payload.id);
-        if (index >= 0) state.tasks[index] = payload;
-        else state.tasks.push(payload);
-
+      refs.deleteTaskBtn.addEventListener('click', () => {
+        const id = refs.deleteTaskBtn.dataset.taskId;
+        if (!id) return;
+        state.tasks = state.tasks.filter(t => t.id !== id);
         saveState();
-        resetForm();
+        closeTaskModal();
         render();
       });
 
-      list.addEventListener('click', (event) => {
-        const button = event.target.closest('button[data-action]');
-        if (!button) return;
-        const id = button.dataset.id;
-        const action = button.dataset.action;
-        const task = state.tasks.find(item => item.id === id);
-        if (!task) return;
+      refs.nav.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-view]');
+        if (!btn) return;
+        state.activeView = btn.dataset.view;
+        saveState();
+        render();
+      });
 
-        if (action === 'delete') {
-          state.tasks = state.tasks.filter(item => item.id !== id);
-          saveState();
-          render();
-          return;
+      document.body.addEventListener('click', (event) => {
+        const opener = event.target.closest('[data-open-task]');
+        if (opener) openTaskModal(opener.dataset.openTask);
+      });
+
+      refs.panels.list.addEventListener('input', (event) => {
+        const mapping = { fltQuery: 'query', fltStatus: 'status', fltPriority: 'priority', fltAssignee: 'assignee', fltSort: 'sort' };
+        const key = mapping[event.target.id];
+        if (!key) return;
+        state.filters[key] = event.target.value;
+        saveState();
+        renderList();
+      });
+
+      refs.panels.departments.addEventListener('click', (event) => {
+        if (event.target.id === 'addDepartmentBtn') {
+          state.departments.push({ id: crypto.randomUUID(), name: 'Новый отдел', color: '#7f8cff', order: state.departments.length, hidden: false });
+          saveState(); render(); return;
         }
-
-        document.getElementById('taskId').value = task.id;
-        document.getElementById('title').value = task.title;
-        document.getElementById('assignee').value = task.assignee || '';
-        document.getElementById('department').value = task.department || '';
-        document.getElementById('status').value = task.status;
-        document.getElementById('priority').value = task.priority;
-        document.getElementById('deadline').value = task.deadline || '';
-        document.getElementById('description').value = task.description || '';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const row = event.target.closest('[data-dep-id]');
+        if (!row) return;
+        const dep = state.departments.find(d => d.id === row.dataset.depId);
+        if (!dep) return;
+        const action = event.target.dataset.action;
+        if (action === 'toggle') dep.hidden = !dep.hidden;
+        if (action === 'up') reorderEntity('departments', dep.id, 'up');
+        saveState(); render();
       });
 
-      search.addEventListener('input', render);
-      document.getElementById('resetBtn').addEventListener('click', resetForm);
-      document.getElementById('wipeBtn').addEventListener('click', () => {
-        if (!confirm('Удалить все задачи из localStorage?')) return;
-        state.tasks = [];
+      refs.panels.departments.addEventListener('input', (event) => {
+        const row = event.target.closest('[data-dep-id]');
+        if (!row) return;
+        const dep = state.departments.find(d => d.id === row.dataset.depId);
+        if (!dep) return;
+        dep[event.target.dataset.field] = event.target.value;
         saveState();
-        resetForm();
+      });
+
+      refs.panels.assignees.addEventListener('click', (event) => {
+        if (event.target.id === 'addAssigneeBtn') {
+          state.assignees.push({ id: crypto.randomUUID(), name: 'Новый сотрудник', hidden: false });
+          saveState(); render(); return;
+        }
+        const row = event.target.closest('[data-assignee-id]');
+        if (!row) return;
+        const person = state.assignees.find(a => a.id === row.dataset.assigneeId);
+        if (!person) return;
+        const action = event.target.dataset.action;
+        if (action === 'toggle') person.hidden = !person.hidden;
+        if (action === 'remove') state.assignees = state.assignees.filter(a => a.id !== person.id);
+        saveState(); render();
+      });
+
+      refs.panels.assignees.addEventListener('input', (event) => {
+        const row = event.target.closest('[data-assignee-id]');
+        if (!row) return;
+        const person = state.assignees.find(a => a.id === row.dataset.assigneeId);
+        if (!person) return;
+        person.name = event.target.value;
+        saveState();
+      });
+
+      refs.panels.statuses.addEventListener('click', (event) => {
+        const row = event.target.closest('[data-status-id]');
+        if (!row) return;
+        const status = state.statuses.find(s => s.id === row.dataset.statusId);
+        if (!status) return;
+        const action = event.target.dataset.action;
+        if (action === 'toggle') status.hidden = !status.hidden;
+        if (action === 'up') reorderEntity('statuses', status.id, 'up');
+        if (action === 'down') reorderEntity('statuses', status.id, 'down');
+        saveState(); render();
+      });
+
+      refs.panels.statuses.addEventListener('input', (event) => {
+        const row = event.target.closest('[data-status-id]');
+        if (!row) return;
+        const status = state.statuses.find(s => s.id === row.dataset.statusId);
+        if (!status) return;
+        status.name = event.target.value;
+        saveState();
+      });
+
+      document.getElementById('wipeDataBtn').addEventListener('click', () => {
+        if (!confirm('Удалить все данные из localStorage?')) return;
+        localStorage.removeItem(STORAGE_KEY);
+        Object.assign(state, defaultState());
+        saveState();
         render();
       });
 
-      resetForm();
+      refs.taskModalBackdrop.addEventListener('click', (event) => {
+        if (event.target === refs.taskModalBackdrop) closeTaskModal();
+      });
+
+      saveState();
       render();
     </script>
   </body>
