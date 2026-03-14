@@ -3,10 +3,225 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ОПЕРАЦИОННАЯ ДОСКА</title>
+    <title>Операционная доска — офлайн</title>
+    <style>
+      :root { color-scheme: light; }
+      body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }
+      .wrap { max-width: 1080px; margin: 0 auto; padding: 20px; }
+      .grid { display: grid; gap: 12px; }
+      .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); }
+      .title { margin: 0 0 12px; font-size: 20px; }
+      .muted { color: #64748b; font-size: 13px; }
+      label { display: block; font-size: 13px; color: #334155; margin-bottom: 8px; }
+      input, select, textarea, button { font: inherit; }
+      input, select, textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 9px 10px; box-sizing: border-box; margin-top: 4px; }
+      textarea { min-height: 80px; resize: vertical; }
+      button { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; background: #f8fafc; cursor: pointer; }
+      button.primary { background: #0ea5e9; color: #fff; border-color: #0284c7; }
+      button.danger { color: #be123c; border-color: #fecdd3; background: #fff1f2; }
+      .row { display: flex; gap: 8px; align-items: center; }
+      .between { justify-content: space-between; }
+      .task { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; margin-top: 8px; }
+      .task h4 { margin: 0 0 6px; }
+      .pill { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #e2e8f0; color: #334155; }
+      .pill.crit { background: #ffe4e6; color: #be123c; }
+      .pill.high { background: #fef3c7; color: #92400e; }
+      .pill.done { background: #dcfce7; color: #166534; }
+      .empty { padding: 16px; text-align: center; color: #64748b; border: 1px dashed #cbd5e1; border-radius: 10px; }
+      @media (max-width: 860px) { .grid-2 { grid-template-columns: 1fr; } }
+    </style>
   </head>
-  <body class="bg-slate-100">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+  <body>
+    <div class="wrap grid">
+      <section class="card">
+        <h1 class="title">ОПЕРАЦИОННАЯ ДОСКА (локальный режим)</h1>
+        <p class="muted">Откройте этот <b>index.html</b> двойным кликом — всё работает без сервера. Данные сохраняются автоматически в localStorage и восстанавливаются при следующем открытии.</p>
+      </section>
+
+      <section class="card">
+        <h2 class="title" style="font-size:18px">Новая / редактирование задачи</h2>
+        <form id="taskForm" class="grid">
+          <input type="hidden" id="taskId" />
+          <div class="grid grid-2">
+            <label>Название<input id="title" required placeholder="Например: Подготовить отчёт" /></label>
+            <label>Исполнитель<input id="assignee" placeholder="Иван Петров" /></label>
+            <label>Отдел<input id="department" placeholder="Маркетинг" /></label>
+            <label>Статус
+              <select id="status">
+                <option>Беклог</option>
+                <option>В процессе</option>
+                <option>На проверке</option>
+                <option>Готово</option>
+              </select>
+            </label>
+            <label>Приоритет
+              <select id="priority">
+                <option>Низкий</option>
+                <option selected>Средний</option>
+                <option>Высокий</option>
+                <option>Критический</option>
+              </select>
+            </label>
+            <label>Дедлайн<input id="deadline" type="date" /></label>
+          </div>
+          <label>Описание<textarea id="description" placeholder="Детали задачи"></textarea></label>
+          <div class="row between">
+            <div class="row">
+              <button type="button" id="resetBtn">Очистить форму</button>
+              <button type="button" id="wipeBtn" class="danger">Сбросить все данные</button>
+            </div>
+            <button class="primary" type="submit">Сохранить задачу</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="row between">
+          <h2 class="title" style="font-size:18px;margin:0">Задачи</h2>
+          <input id="search" placeholder="Поиск по названию..." style="max-width:320px" />
+        </div>
+        <div id="list"></div>
+      </section>
+    </div>
+
+    <script>
+      const STORAGE_KEY = 'oper-board-data-v1';
+      const nowDate = () => new Date().toISOString().slice(0, 10);
+
+      const defaultState = () => ({ tasks: [] });
+
+      const loadState = () => {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return defaultState();
+        try { return JSON.parse(raw); } catch { return defaultState(); }
+      };
+
+      const saveState = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+      const state = loadState();
+      const form = document.getElementById('taskForm');
+      const list = document.getElementById('list');
+      const search = document.getElementById('search');
+
+      if (!state.tasks.length) saveState();
+
+      function priorityClass(priority) {
+        if (priority === 'Критический') return 'pill crit';
+        if (priority === 'Высокий') return 'pill high';
+        return 'pill';
+      }
+
+      function render() {
+        const q = search.value.trim().toLowerCase();
+        const tasks = [...state.tasks]
+          .filter(t => !q || t.title.toLowerCase().includes(q))
+          .sort((a, b) => (a.deadline || '9999-12-31').localeCompare(b.deadline || '9999-12-31'));
+
+        if (!tasks.length) {
+          list.innerHTML = '<div class="empty">Пока задач нет</div>';
+          return;
+        }
+
+        list.innerHTML = tasks.map(task => {
+          const doneClass = task.status === 'Готово' ? 'pill done' : 'pill';
+          return `
+            <article class="task">
+              <div class="row between">
+                <h4>${escapeHtml(task.title)}</h4>
+                <div class="row">
+                  <span class="${priorityClass(task.priority)}">${task.priority}</span>
+                  <span class="${doneClass}">${task.status}</span>
+                </div>
+              </div>
+              <div class="muted">${escapeHtml(task.department || 'Без отдела')} • ${escapeHtml(task.assignee || 'Без исполнителя')} • дедлайн: ${task.deadline || 'не указан'}</div>
+              <p style="margin:8px 0 0">${escapeHtml(task.description || '')}</p>
+              <div class="row" style="margin-top:8px">
+                <button data-action="edit" data-id="${task.id}">Редактировать</button>
+                <button data-action="delete" data-id="${task.id}" class="danger">Удалить</button>
+              </div>
+            </article>
+          `;
+        }).join('');
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function resetForm() {
+        form.reset();
+        document.getElementById('taskId').value = '';
+        document.getElementById('deadline').value = nowDate();
+      }
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const payload = {
+          id: document.getElementById('taskId').value || crypto.randomUUID(),
+          title: document.getElementById('title').value.trim(),
+          assignee: document.getElementById('assignee').value.trim(),
+          department: document.getElementById('department').value.trim(),
+          status: document.getElementById('status').value,
+          priority: document.getElementById('priority').value,
+          deadline: document.getElementById('deadline').value,
+          description: document.getElementById('description').value.trim(),
+          updatedAt: new Date().toISOString()
+        };
+
+        if (!payload.title) return;
+        const index = state.tasks.findIndex(task => task.id === payload.id);
+        if (index >= 0) state.tasks[index] = payload;
+        else state.tasks.push(payload);
+
+        saveState();
+        resetForm();
+        render();
+      });
+
+      list.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+        const id = button.dataset.id;
+        const action = button.dataset.action;
+        const task = state.tasks.find(item => item.id === id);
+        if (!task) return;
+
+        if (action === 'delete') {
+          state.tasks = state.tasks.filter(item => item.id !== id);
+          saveState();
+          render();
+          return;
+        }
+
+        document.getElementById('taskId').value = task.id;
+        document.getElementById('title').value = task.title;
+        document.getElementById('assignee').value = task.assignee || '';
+        document.getElementById('department').value = task.department || '';
+        document.getElementById('status').value = task.status;
+        document.getElementById('priority').value = task.priority;
+        document.getElementById('deadline').value = task.deadline || '';
+        document.getElementById('description').value = task.description || '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      search.addEventListener('input', render);
+      document.getElementById('resetBtn').addEventListener('click', resetForm);
+      document.getElementById('wipeBtn').addEventListener('click', () => {
+        if (!confirm('Удалить все задачи из localStorage?')) return;
+        state.tasks = [];
+        saveState();
+        resetForm();
+        render();
+      });
+
+      resetForm();
+      render();
+    </script>
   </body>
 </html>
