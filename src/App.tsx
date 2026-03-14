@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Assignee, BoardData, Department, Priority, Status, Task, ViewMode } from './types';
 import { dateTag, formatDate, isOverdue, toISODate } from './lib/date';
 import { priorityColor, sortTasks } from './lib/task';
+import { storageApi } from './lib/storage';
 
 const priorities: Priority[] = ['Низкий', 'Средний', 'Высокий', 'Критический'];
 
@@ -30,7 +31,7 @@ function App() {
   const [filter, setFilter] = useState({ status: '', dep: '', assignee: '', priority: '', overdue: '', urgent: '', deadline: '' });
 
   useEffect(() => {
-    Promise.all([window.operBoardApi.readData(), window.operBoardApi.dataPath()]).then(([loaded, path]) => {
+    Promise.all([storageApi.readData(), storageApi.dataPath()]).then(([loaded, path]) => {
       setData(loaded);
       setDataPath(path);
       setDraft((s) => ({ ...s, departmentId: loaded.departments[0]?.id ?? '', assigneeId: loaded.assignees[0]?.id ?? '', statusId: loaded.statuses[0]?.id ?? '' }));
@@ -39,7 +40,7 @@ function App() {
 
   useEffect(() => {
     if (!data) return;
-    void window.operBoardApi.writeData(data);
+    void storageApi.writeData(data);
   }, [data]);
 
   if (!data) return <div className="p-10 text-slate-500">Загрузка доски…</div>;
