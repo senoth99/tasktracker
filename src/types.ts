@@ -48,4 +48,4 @@ export type BoardData = {
   tasks: Task[];
 };
 
-export type ViewMode = 'kanban' | 'list' | 'settings';
+export type ViewMode = 'dashboard' | 'kanban' | 'list' | 'departments' | 'assignees' | 'statuses';
