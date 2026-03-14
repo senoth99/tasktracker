@@ -211,22 +211,24 @@ function App() {
         )}
 
         {view === 'kanban' && (
-          <section className="kanban-grid">
-            {activeStatuses.map((status) => {
-              const tasks = filteredTasks.filter((t) => t.statusId === status.id);
-              return (
-                <article key={status.id} className="kanban-column glass" onDragOver={(e) => e.preventDefault()} onDrop={(e) => {
-                  const taskId = e.dataTransfer.getData('text/plain');
-                  setData((prev) => prev ? { ...prev, tasks: prev.tasks.map((t) => t.id === taskId ? { ...t, statusId: status.id, updatedAt: new Date().toISOString() } : t) } : prev);
-                }}>
-                  <header><h3>{status.name}</h3><span>{tasks.length}</span></header>
-                  <div className="task-stack">
-                    {tasks.length === 0 && <div className="empty-col">Пока пусто</div>}
-                    {tasks.map((task) => <TaskCard key={task.id} task={task} data={data} onOpen={() => openEdit(task)} drag />)}
-                  </div>
-                </article>
-              );
-            })}
+          <section className="kanban-board-scroll">
+            <div className="kanban-grid">
+              {activeStatuses.map((status) => {
+                const tasks = filteredTasks.filter((t) => t.statusId === status.id);
+                return (
+                  <article key={status.id} className="kanban-column glass" onDragOver={(e) => e.preventDefault()} onDrop={(e) => {
+                    const taskId = e.dataTransfer.getData('text/plain');
+                    setData((prev) => prev ? { ...prev, tasks: prev.tasks.map((t) => t.id === taskId ? { ...t, statusId: status.id, updatedAt: new Date().toISOString() } : t) } : prev);
+                  }}>
+                    <header><h3>{status.name}</h3><span>{tasks.length}</span></header>
+                    <div className="task-stack">
+                      {tasks.length === 0 && <div className="empty-col">Пока пусто</div>}
+                      {tasks.map((task) => <TaskCard key={task.id} task={task} data={data} onOpen={() => openEdit(task)} drag />)}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
           </section>
         )}
 
@@ -301,11 +303,18 @@ function TaskCard({ task, data, onOpen, drag }: { task: Task; data: BoardData; o
   const assignee = data.assignees.find((a) => a.id === task.assigneeId);
   return (
     <article draggable={drag} onDragStart={(e) => e.dataTransfer.setData('text/plain', task.id)} onClick={onOpen} className="task-card" style={{ borderColor: `${task.color}66` }}>
-      <div className="task-head"><h4>{task.title}</h4><span className={`pill ${priorityColor[task.priority]}`}>{task.priority}</span></div>
+      <div className="task-head">
+        <h4>{task.title}</h4>
+        <div className="task-badges">
+          <span className={`pill ${priorityColor[task.priority]}`}>{task.priority}</span>
+          {task.urgent && <span className="pill urgent">Срочно</span>}
+        </div>
+      </div>
       {task.description && <p>{task.description}</p>}
       <div className="task-meta">
-        <span>{dep?.name}</span><span>{assignee?.initials}</span><span className={isOverdue(task.deadline) ? 'danger' : ''}>{formatDate(task.deadline)}</span>
-        {task.urgent && <span className="pill urgent">Срочно</span>}
+        <span><b>Исполнитель:</b> {assignee?.name ?? assignee?.initials ?? '—'}</span>
+        <span><b>Отдел:</b> {dep?.name ?? '—'}</span>
+        <span><b>Дедлайн:</b> <em className={isOverdue(task.deadline) ? 'danger' : ''}>{formatDate(task.deadline)}</em></span>
       </div>
     </article>
   );
