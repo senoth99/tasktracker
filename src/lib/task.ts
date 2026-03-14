@@ -1,4 +1,4 @@
-import type { Task, Priority, Status } from '../types';
+import type { Priority, Status, Task } from '../types';
 import { isOverdue } from './date';
 
 const priorityRank: Record<Priority, number> = {
@@ -9,10 +9,10 @@ const priorityRank: Record<Priority, number> = {
 };
 
 export const priorityColor: Record<Priority, string> = {
-  Низкий: 'bg-slate-100 text-slate-700',
-  Средний: 'bg-sky-100 text-sky-700',
-  Высокий: 'bg-amber-100 text-amber-700',
-  Критический: 'bg-rose-100 text-rose-700 ring-1 ring-rose-300'
+  Низкий: 'priority-low',
+  Средний: 'priority-mid',
+  Высокий: 'priority-high',
+  Критический: 'priority-critical'
 };
 
 export const sortTasks = (tasks: Task[], statuses: Status[]) => {
@@ -21,12 +21,11 @@ export const sortTasks = (tasks: Task[], statuses: Status[]) => {
     const p = priorityRank[a.priority] - priorityRank[b.priority];
     if (p !== 0) return p;
 
-    const aOver = isOverdue(a.deadline) ? -1 : 1;
-    const bOver = isOverdue(b.deadline) ? -1 : 1;
-    if (aOver !== bOver) return aOver - bOver;
+    const overdueDelta = Number(isOverdue(b.deadline)) - Number(isOverdue(a.deadline));
+    if (overdueDelta !== 0) return overdueDelta;
 
-    const d = a.deadline.localeCompare(b.deadline);
-    if (d !== 0) return d;
+    const dateDelta = a.deadline.localeCompare(b.deadline);
+    if (dateDelta !== 0) return dateDelta;
 
     return (statusOrder.get(a.statusId) ?? 999) - (statusOrder.get(b.statusId) ?? 999);
   });
